@@ -568,6 +568,15 @@
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadArea.classList.remove('dragover');
+                
+                // Visual feedback for drop
+                uploadArea.style.borderColor = '#28a745';
+                uploadArea.style.backgroundColor = '#f0fff4';
+                setTimeout(() => {
+                    uploadArea.style.borderColor = 'var(--primary-color)';
+                    uploadArea.style.backgroundColor = '#f8f9ff';
+                }, 500);
+                
                 const files = Array.from(e.dataTransfer.files);
                 handleFiles(files);
             });
@@ -586,18 +595,21 @@
 
         // Handle file selection
         function handleFiles(files) {
+            // Immediate feedback
+            showNotification(`Selected ${files.length} file(s) - Validating...`, 'info');
+            
             const validFiles = files.filter(file => {
                 const validTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.txt', '.md'];
                 const extension = '.' + file.name.split('.').pop().toLowerCase();
                 const maxSize = 50 * 1024 * 1024; // 50MB
 
                 if (!validTypes.includes(extension)) {
-                    showNotification(`File ${file.name} has unsupported format`, 'error');
+                    showNotification(`❌ ${file.name} has unsupported format`, 'error');
                     return false;
                 }
 
                 if (file.size > maxSize) {
-                    showNotification(`File ${file.name} is too large (max 50MB)`, 'error');
+                    showNotification(`❌ ${file.name} is too large (max 50MB)`, 'error');
                     return false;
                 }
 
@@ -605,7 +617,10 @@
             });
 
             if (validFiles.length > 0) {
+                showNotification(`✅ ${validFiles.length} valid file(s) - Starting upload...`, 'success');
                 uploadFiles(validFiles);
+            } else {
+                showNotification(`❌ No valid files to upload`, 'error');
             }
         }
 
@@ -615,6 +630,10 @@
             const uploadContent = document.querySelector('.upload-content');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
+
+            // Show file names being uploaded
+            const fileNames = files.map(f => f.name).join(', ');
+            progressText.textContent = `Preparing to upload: ${fileNames}`;
 
             uploadContent.style.display = 'none';
             uploadProgress.style.display = 'block';
@@ -725,26 +744,41 @@
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
+            
+            let backgroundColor;
+            switch(type) {
+                case 'success': backgroundColor = '#28a745'; break;
+                case 'error': backgroundColor = '#dc3545'; break;
+                case 'info': backgroundColor = '#007bff'; break;
+                default: backgroundColor = '#28a745';
+            }
+            
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
                 padding: 15px 20px;
-                border-radius: 5px;
+                border-radius: 8px;
                 color: white;
                 font-weight: bold;
                 z-index: 1000;
                 transform: translateX(400px);
                 transition: transform 0.3s ease;
-                background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+                background-color: ${backgroundColor};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                max-width: 300px;
+                word-wrap: break-word;
             `;
             document.body.appendChild(notification);
 
             setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+            
+            // Different durations based on type
+            const duration = type === 'info' ? 2000 : 4000;
             setTimeout(() => {
                 notification.style.transform = 'translateX(400px)';
                 setTimeout(() => document.body.removeChild(notification), 300);
-            }, 3000);
+            }, duration);
         }
 
         // Welcome message
