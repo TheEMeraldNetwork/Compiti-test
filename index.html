@@ -624,7 +624,7 @@
             }
         }
 
-        // Upload files (simulated - in real version would upload to GitHub)
+        // Upload files (real upload to backend)
         function uploadFiles(files) {
             const uploadProgress = document.getElementById('uploadProgress');
             const uploadContent = document.querySelector('.upload-content');
@@ -638,37 +638,82 @@
             uploadContent.style.display = 'none';
             uploadProgress.style.display = 'block';
 
-            // Simulate upload progress
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 100) progress = 100;
+            // Process each file
+            let processedCount = 0;
+            let results = [];
 
-                progressFill.style.width = progress + '%';
-                progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+            files.forEach((file, index) => {
+                const formData = new FormData();
+                formData.append('file', file);
 
-                if (progress >= 100) {
-                    clearInterval(progressInterval);
-                    setTimeout(() => {
-                        uploadComplete(files);
-                    }, 500);
-                }
-            }, 200);
+                progressText.textContent = `Processing ${file.name}...`;
+                progressFill.style.width = '50%';
+
+                fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    processedCount++;
+                    results.push({
+                        file: file.name,
+                        success: data.success,
+                        result: data.result,
+                        error: data.error
+                    });
+
+                    progressFill.style.width = `${(processedCount / files.length) * 100}%`;
+                    
+                    if (processedCount === files.length) {
+                        uploadComplete(results);
+                    }
+                })
+                .catch(error => {
+                    processedCount++;
+                    results.push({
+                        file: file.name,
+                        success: false,
+                        error: error.message
+                    });
+
+                    if (processedCount === files.length) {
+                        uploadComplete(results);
+                    }
+                });
+            });
         }
 
         // Upload complete
-        function uploadComplete(files) {
+        function uploadComplete(results) {
             const uploadProgress = document.getElementById('uploadProgress');
             const uploadContent = document.querySelector('.upload-content');
 
-            // Add files to uploaded list
-            files.forEach(file => {
-                uploadedFiles.push({
-                    name: file.name,
-                    size: file.size,
-                    timestamp: new Date(),
-                    status: 'uploaded'
-                });
+            // Process results
+            let successCount = 0;
+            let errorCount = 0;
+
+            results.forEach(result => {
+                if (result.success) {
+                    successCount++;
+                    uploadedFiles.push({
+                        name: result.file,
+                        timestamp: new Date(),
+                        status: 'solved',
+                        solution: result.result.solution
+                    });
+                    
+                    // Show solution
+                    showSolution(result.file, result.result);
+                } else {
+                    errorCount++;
+                    uploadedFiles.push({
+                        name: result.file,
+                        timestamp: new Date(),
+                        status: 'error',
+                        error: result.error
+                    });
+                }
             });
 
             showUploadedFiles();
@@ -679,8 +724,41 @@
                 document.getElementById('progressFill').style.width = '0%';
             }, 1000);
 
-            showNotification(`Successfully uploaded ${files.length} file(s)! Processing will begin automatically.`, 'success');
+            if (successCount > 0) {
+                showNotification(`✅ Successfully solved ${successCount} problem(s)!`, 'success');
+            }
+            if (errorCount > 0) {
+                showNotification(`❌ ${errorCount} problem(s) failed to solve`, 'error');
+            }
+
             updateStatus();
+        }
+
+        // Show solution in the solutions section
+        function showSolution(filename, result) {
+            const solutionsList = document.getElementById('solutionsList');
+            const emptyState = solutionsList.querySelector('.empty-state');
+            
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+
+            const solutionDiv = document.createElement('div');
+            solutionDiv.className = 'solution-item';
+            solutionDiv.innerHTML = `
+                <div class="solution-header">
+                    <div class="solution-title">🔢 ${filename}</div>
+                    <div class="solution-status status-success">✅ Solved</div>
+                </div>
+                <div class="solution-meta">
+                    <span>📅 ${new Date().toLocaleString()}</span>
+                    <span>⏱️ ${result.processing_time || 'N/A'}</span>
+                    <span>🎯 ${result.problem_type || 'Unknown'}</span>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; font-family: monospace; white-space: pre-wrap;">${result.solution || 'Solution not available'}</div>
+            `;
+            
+            solutionsList.insertBefore(solutionDiv, solutionsList.firstChild);
         }
 
         // Show uploaded files

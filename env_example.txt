@@ -1,0 +1,13 @@
+# Environment Variables for Automated Math Solver
+# Copy this file to .env and fill in your actual values
+
+# GitHub API Token (create at https://github.com/settings/tokens)
+GITHUB_TOKEN=your_github_token_here
+
+# Email Configuration
+EMAIL_SENDER=davideconsiglio1978@gmail.com
+EMAIL_PASSWORD=your_google_app_password_here
+
+# Optional: Flask Configuration
+FLASK_ENV=development
+FLASK_DEBUG=true

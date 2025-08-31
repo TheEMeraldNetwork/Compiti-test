@@ -1,0 +1,59 @@
+# Configuration for Automated Math Solver
+# FOR TESTING PURPOSES ONLY
+
+github:
+  # GitHub repository settings
+  repository: "TheEMeraldNetwork/Compiti-test"
+  branch: "main"
+  token: ""  # Set via environment variable GITHUB_TOKEN
+  upload_folder: "problems"
+  solutions_folder: "solutions"
+  
+scheduler:
+  # Scheduler settings
+  check_interval_minutes: 30
+  max_retries: 3
+  
+email:
+  # Email configuration
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  sender_email: ""  # Set via environment variable EMAIL_SENDER
+  sender_password: ""  # Set via environment variable EMAIL_PASSWORD
+  
+math_solver:
+  # Mathematical solver settings
+  max_processing_time: 300  # 5 minutes max per problem
+  supported_formats: [".pdf", ".jpg", ".jpeg", ".png", ".txt", ".md"]
+  ocr_languages: ["eng", "ita"]  # English and Italian
+  
+logging:
+  # Logging configuration
+  level: "INFO"
+  log_file: "logs/math_solver.log"
+  max_file_size: "10MB"
+  backup_count: 5
+  
+security:
+  # Security and validation settings
+  max_file_size_mb: 50
+  allowed_domains: ["github.com"]
+  content_validation: true
+  mathematical_keywords: 
+    - "solve"
+    - "equation" 
+    - "integral"
+    - "derivative"
+    - "limit"
+    - "matrix"
+    - "function"
+    - "calculate"
+    - "find"
+    - "prove"
+    - "graph"
+    - "algebra"
+    - "geometry"
+    - "calculus"
+    - "trigonometry"
+    - "statistics"
+    - "probability"
