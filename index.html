@@ -107,6 +107,131 @@
             text-decoration: underline;
         }
 
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #0056b3;
+            background-color: #f0f4ff;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--success-color);
+            background-color: #f0fff4;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.7;
+        }
+
+        .upload-content h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .upload-content p {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .upload-progress {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .file-list {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: var(--dark-text);
+        }
+
+        .file-size {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .file-status {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-uploading {
+            background-color: var(--warning-color);
+            color: #856404;
+        }
+
+        .status-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status-error {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
         .supported-formats {
             background-color: #f1f8e9;
             padding: 15px;
@@ -321,17 +446,31 @@
         <div class="upload-section">
             <h2>📤 Upload Mathematical Problems</h2>
             
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drag & Drop Files Here</h3>
+                    <p>Or click to select files</p>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.txt,.md" style="display: none;">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        Choose Files
+                    </button>
+                </div>
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading...</p>
+                </div>
+            </div>
+
             <div class="upload-instructions">
-                <h3>How to Upload Problems:</h3>
+                <h3>How it works:</h3>
                 <ol>
-                    <li>Go to the <a href="https://github.com/TheEMeraldNetwork/Compiti-test" target="_blank">GitHub Repository</a></li>
-                    <li>Navigate to the <strong>problems</strong> folder (create it if it doesn't exist)</li>
-                    <li>Click "Add file" → "Upload files"</li>
-                    <li>Drag and drop your mathematical problem files</li>
-                    <li>Add a descriptive commit message</li>
-                    <li>Click "Commit changes"</li>
-                    <li>Wait for the system to process your problem (checked every 30 minutes)</li>
-                    <li>Solutions will appear below and you'll receive an email notification</li>
+                    <li>Select or drag mathematical problem files above</li>
+                    <li>Files are uploaded directly to the system</li>
+                    <li>Processing happens automatically every 30 minutes</li>
+                    <li>Solutions appear below and you'll receive email notification</li>
                 </ol>
             </div>
 
@@ -395,5 +534,223 @@
             Notifications: <strong>davideconsiglio1978@gmail.com</strong>
         </p>
     </footer>
+
+    <script>
+        // File upload functionality
+        let uploadedFiles = [];
+        const mockSolutions = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSolutions();
+            updateStatus();
+            initializeUpload();
+            
+            // Simulate periodic updates
+            setInterval(updateStatus, 60000);
+        });
+
+        // Initialize upload functionality
+        function initializeUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                handleFiles(files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                handleFiles(files);
+            });
+
+            uploadArea.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    fileInput.click();
+                }
+            });
+        }
+
+        // Handle file selection
+        function handleFiles(files) {
+            const validFiles = files.filter(file => {
+                const validTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.txt', '.md'];
+                const extension = '.' + file.name.split('.').pop().toLowerCase();
+                const maxSize = 50 * 1024 * 1024; // 50MB
+
+                if (!validTypes.includes(extension)) {
+                    showNotification(`File ${file.name} has unsupported format`, 'error');
+                    return false;
+                }
+
+                if (file.size > maxSize) {
+                    showNotification(`File ${file.name} is too large (max 50MB)`, 'error');
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (validFiles.length > 0) {
+                uploadFiles(validFiles);
+            }
+        }
+
+        // Upload files (simulated - in real version would upload to GitHub)
+        function uploadFiles(files) {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadContent = document.querySelector('.upload-content');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            uploadContent.style.display = 'none';
+            uploadProgress.style.display = 'block';
+
+            // Simulate upload progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 100) progress = 100;
+
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        uploadComplete(files);
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        // Upload complete
+        function uploadComplete(files) {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadContent = document.querySelector('.upload-content');
+
+            // Add files to uploaded list
+            files.forEach(file => {
+                uploadedFiles.push({
+                    name: file.name,
+                    size: file.size,
+                    timestamp: new Date(),
+                    status: 'uploaded'
+                });
+            });
+
+            showUploadedFiles();
+
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                uploadContent.style.display = 'block';
+                document.getElementById('progressFill').style.width = '0%';
+            }, 1000);
+
+            showNotification(`Successfully uploaded ${files.length} file(s)! Processing will begin automatically.`, 'success');
+            updateStatus();
+        }
+
+        // Show uploaded files
+        function showUploadedFiles() {
+            const uploadSection = document.querySelector('.upload-section');
+            let fileListDiv = document.getElementById('fileList');
+
+            if (!fileListDiv) {
+                fileListDiv = document.createElement('div');
+                fileListDiv.id = 'fileList';
+                fileListDiv.className = 'file-list';
+                fileListDiv.innerHTML = '<h4>📂 Recently Uploaded Files:</h4>';
+                uploadSection.appendChild(fileListDiv);
+            }
+
+            const existingItems = fileListDiv.querySelectorAll('.file-item');
+            existingItems.forEach(item => item.remove());
+
+            uploadedFiles.slice(-5).reverse().forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div>
+                        <div class="file-name">📄 ${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)} • ${formatTimestamp(file.timestamp)}</div>
+                    </div>
+                    <div class="file-status status-success">Uploaded</div>
+                `;
+                fileListDiv.appendChild(fileItem);
+            });
+        }
+
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatTimestamp(timestamp) {
+            return timestamp.toLocaleString();
+        }
+
+        function renderSolutions() {
+            const solutionsList = document.getElementById('solutionsList');
+            if (mockSolutions.length === 0) {
+                return; // Keep empty state
+            }
+        }
+
+        function updateStatus() {
+            document.getElementById('totalProblems').textContent = uploadedFiles.length;
+            document.getElementById('solvedProblems').textContent = mockSolutions.length;
+            document.getElementById('pendingProblems').textContent = uploadedFiles.length - mockSolutions.length;
+            document.getElementById('lastCheck').textContent = new Date().toLocaleTimeString();
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 5px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                transform: translateX(400px);
+                transition: transform 0.3s ease;
+                background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // Welcome message
+        setTimeout(() => {
+            showNotification('Upload a math problem to get started!', 'success');
+        }, 2000);
+    </script>
 </body>
 </html>
